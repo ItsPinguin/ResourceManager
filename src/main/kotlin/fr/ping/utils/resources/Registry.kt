@@ -1,8 +1,13 @@
 package fr.ping.utils.resources
 
+import com.google.gson.JsonObject
+import fr.ping.fr.ping.utils.resources.scheme.FieldScheme
 import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import java.io.File
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.forEach
 
 class Registry<T : Resource> (val type: Class<T>, val registryName: String) : Cleanable {
   private val resourceMap: MutableMap<String, ResourceHandle<T>> = ConcurrentHashMap()
@@ -68,5 +73,27 @@ class Registry<T : Resource> (val type: Class<T>, val registryName: String) : Cl
     ResourceIO.loadToRegistry(folder, File(folder, "$resource.json"), this)
   }
 
-  fun applyScheme(scheme : String) {}
+  fun applyScheme(scheme : ResourceScheme) {
+    resourceScheme = scheme
+  }
+
+  fun applyScheme(inputStream: InputStream?) {
+    if (inputStream == null) return
+    val reader = InputStreamReader(inputStream)
+    val content = reader.readText()
+    println(content)
+    val jsonObject : JsonObject = ResourceManager.gson?.fromJson(content, JsonObject::class.java) ?: JsonObject()
+    println(jsonObject)
+    val scheme = ResourceScheme()
+    //scheme.fields = ResourceManager.gson?.fromJson(jsonObject.get("fields"), MutableMap::class.java) as? MutableMap<String, FieldScheme> ?: mutableMapOf()
+    jsonObject.asMap().forEach { (key : String, value) ->
+      //println("Key: $key, Value: $value")
+      //scheme.fields?.put(key, value)
+      println("Field is" + ResourceManager.gson?.fromJson(value, FieldScheme::class.java))
+      ResourceManager.gson?.fromJson(value, FieldScheme::class.java)?.let { scheme.fields?.put(key, it) }
+    }
+    applyScheme(scheme)
+    reader.close()
+    println("§aScheme applied! Using: $scheme")
+  }
 }

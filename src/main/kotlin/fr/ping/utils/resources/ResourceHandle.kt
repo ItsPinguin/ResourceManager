@@ -1,6 +1,5 @@
 package fr.ping.utils.resources
 
-import jdk.vm.ci.meta.TriState
 import java.util.concurrent.atomic.AtomicInteger
 
 class ResourceHandle<T : Resource> (
@@ -10,7 +9,7 @@ class ResourceHandle<T : Resource> (
   var resource: T? = null
   var usageCount = AtomicInteger(0)
   var isPinned = false
-  var isSchemeValid = TriState.UNKNOWN
+  var isSchemeValid : Boolean? = null
 
   constructor(resource: T? = null, parentRegistry: Registry<T>? = null, resourceName: String) : this(parentRegistry, resourceName) {
     this.resource = resource

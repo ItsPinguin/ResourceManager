@@ -9,8 +9,15 @@ object ResourceIO {
     file.parentFile.mkdirs()
     val jsonElement = ResourceManager.gson?.fromJson(file.reader(), JsonObject::class.java) ?: JsonObject()
     registry.resourceScheme?.let {
-      if (!it.isSchemeValid(jsonElement))
-        throw RuntimeException("Invalid scheme loading from file ${file.path}")
+      println("Checking scheme for file ${file.path}")
+      val passed = try {
+        it.isSchemeValid(jsonElement)
+      } catch (e: Exception) {
+        println("Invalid scheme loading from file ${file.path}")
+        false
+      }
+      println("Scheme passed: $passed")
+      if (!passed) return
     }
     ResourceManager.gson?.fromJson(file.reader(), registry.type).let {
       val id = file.path.toString().replace(registryFolder.path + "/", "").replace(".json", "")
