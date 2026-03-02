@@ -1,5 +1,6 @@
 package fr.ping.utils.resources
 
+import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -7,6 +8,8 @@ class Registry<T : Resource> (val type: Class<T>, val registryName: String) : Cl
   private val resourceMap: MutableMap<String, ResourceHandle<T>> = ConcurrentHashMap()
   var lazyRegistry : Boolean = false
   var parentNamespace : Namespace? = null
+  var assignedDirectories : MutableList<File> = mutableListOf()
+  var resourceScheme : ResourceScheme? = null
 
   fun registerResource(resourceName: String, resource: T?) : Registry<T> {
     if (resourceMap.containsKey(resourceName)) {
@@ -64,4 +67,6 @@ class Registry<T : Resource> (val type: Class<T>, val registryName: String) : Cl
   fun loadFromFile(resource: String, folder: File) {
     ResourceIO.loadToRegistry(folder, File(folder, "$resource.json"), this)
   }
+
+  fun applyScheme(scheme : String) {}
 }

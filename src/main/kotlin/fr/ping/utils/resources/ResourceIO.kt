@@ -1,10 +1,17 @@
 package fr.ping.utils.resources
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import java.io.File
 
 object ResourceIO {
   fun <T : Resource> loadToRegistry(registryFolder: File, file: File, registry: Registry<T>) {
     file.parentFile.mkdirs()
+    val jsonElement = ResourceManager.gson?.fromJson(file.reader(), JsonObject::class.java) ?: JsonObject()
+    registry.resourceScheme?.let {
+      if (!it.isSchemeValid(jsonElement))
+        throw RuntimeException("Invalid scheme loading from file ${file.path}")
+    }
     ResourceManager.gson?.fromJson(file.reader(), registry.type).let {
       val id = file.path.toString().replace(registryFolder.path + "/", "").replace(".json", "")
       val resource = (it as T)
@@ -41,5 +48,10 @@ object ResourceIO {
     registry.listHandles().forEach {
       saveToFile(registryFolder, it)
     }
+  }
+
+  fun loadResource(file : File) {
+    val jsonElement = ResourceManager.gson?.fromJson(file.reader(), JsonElement::class.java) ?: JsonObject()
+    val type = jsonElement.asJsonObject.get("type").asString
   }
 }
