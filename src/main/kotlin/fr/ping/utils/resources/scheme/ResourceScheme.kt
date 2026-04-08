@@ -1,13 +1,15 @@
 package fr.ping.fr.ping.utils.resources.scheme
 
 import com.google.gson.JsonObject
+import fr.ping.utils.resources.Resource
 import fr.ping.utils.resources.ResourceManager
 import java.io.File
 
-data class ResourceScheme(var fields: MutableMap<String, FieldScheme>? = mutableMapOf()) {
+data class ResourceScheme(var fields: MutableMap<String, FieldScheme>? = mutableMapOf()) : Resource {
   fun isSchemeValid(jsonElement: JsonObject, fields : Map<String, FieldScheme>? = this.fields) : Boolean {
     if (fields.isNullOrEmpty()) return true
     fields.forEach { field ->
+      //TODO check inlined definition
       if (!jsonElement.has(field.key)) return false
       val element = jsonElement.get(field.key)
       if (field.value.required && element.isJsonNull) throw MissingFieldException(this, field.value)
@@ -44,6 +46,16 @@ data class ResourceScheme(var fields: MutableMap<String, FieldScheme>? = mutable
 
   override fun toString(): String {
     return "ResourceScheme(fields=$fields)"
+  }
+
+  override fun getId(): String {
+    return ""
+  }
+
+  override fun setId(id: String) {
+  }
+
+  override fun clean() {
   }
 
   companion object {

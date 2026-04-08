@@ -2,6 +2,8 @@ package fr.ping.utils.resources
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
@@ -26,6 +28,30 @@ object ResourceManager : Cleanable {
       .disableHtmlEscaping()
       .setPrettyPrinting()
       .create()
+  }
+
+  fun findSchemeResources(loadDirectly: Boolean = true) {
+    resourcePaths.forEach { resourcePath ->
+      File(resourcePath).walkTopDown().forEach { resourceFile ->
+        if (!resourceFile.isFile) return@forEach
+        resourceFile.readText().let {
+          if (!(it.contains("\"type\": \"scheme\"")
+                || it.contains("\"type\":\"scheme\""))) return@let
+          loadSchemeResource(resourceFile)
+        }
+      }
+    }
+  }
+
+  fun loadSchemeResource(file: File) {
+    try {
+      val scheme = ResourceScheme.fromFile(file)
+      useNamespace("core").useRegistry<ResourceScheme>("schemes")
+        .registerResource(file.nameWithoutExtension, scheme)
+    //TODO adapt to new system
+    } catch (e: Exception) {
+      e.printStackTrace()
+    }
   }
 
   fun useNamespace(name: String) : Namespace {

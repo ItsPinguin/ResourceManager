@@ -7,6 +7,7 @@ class FieldScheme {
     var with: MutableList<String>? = null
     var fields: MutableMap<String, FieldScheme>? = null
     var isArray: Boolean = false
+    var allowInlined: Boolean = false
     override fun toString(): String {
         return "FieldScheme(type=$type, required=$required, with=$with, fields=$fields, isArray=$isArray)"
     }
