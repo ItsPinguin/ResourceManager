@@ -8,6 +8,18 @@ object ResourceManager : Cleanable {
   private val namespaceMap: MutableMap<String, Namespace> = ConcurrentHashMap()
   val resourcePathRegex = Regex("(^[a-z0-9]+):([a-z0-9]+)/([a-z0-9|/]+[a-zA-Z0-9]+)$")
 
+  private val resourcePaths = mutableSetOf<String>()
+
+  fun addResourcePath(path: String) {
+    resourcePaths.removeIf { it.startsWith(path) }
+    if (resourcePaths.none { path.startsWith(it) })
+      resourcePaths.add(path)
+  }
+
+  fun addAllResourcePaths(paths: Collection<String>) = paths.forEach { addResourcePath(it) }
+
+  fun getResourcePaths() : List<String> = resourcePaths.toList()
+
   val gson: Gson? by lazy {
     GsonBuilder()
       .registerTypeAdapterFactory(WrappedResource.WrappedResourceAdapterFactory())
