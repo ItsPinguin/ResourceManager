@@ -43,14 +43,8 @@ class WrappedResource<T : Resource>(
     this.resource = resource
     this.path = "$namespace:$registry/$resource"
     handle?.release()
-    @Suppress("UNCHECKED_CAST")
-    handle = ResourceManager.getHandle<T>(namespace, registry, resource, Class.forName(value?.javaClass?.name) as Class<T>)
-    return this
-  }
-
-  fun setPath(path: String) : WrappedResource<T> {
-    val path = ResourceManager.parseResourcePath(path)
-    setPath(path[0], path[1], path[2])
+    //@Suppress("UNCHECKED_CAST")
+    //handle = ResourceManager.getHandle<T>(namespace, registry, resource, Class.forName(value?.javaClass?.name) as Class<T>)
     return this
   }
 
@@ -113,17 +107,17 @@ class WrappedResource<T : Resource>(
             return wrapped
           }
 
-          if (!ResourceManager.resourcePathRegex.matches(path)) {
-            @Suppress("UNCHECKED_CAST")
-            return WrappedResource<TypeWrapper<String>>(TypeWrapper(path)) as WrappedResource<T>
-          }
-
-          val handle = ResourceManager.getHandle(path, resourceType)
-          handle?.acquire()
-
-          wrapped.handle = handle
-          wrapped.path = path
-          return wrapped
+          //if (!ResourceManager.resourcePathRegex.matches(path)) {
+          //  @Suppress("UNCHECKED_CAST")
+          //  return WrappedResource<TypeWrapper<String>>(TypeWrapper(path)) as WrappedResource<T>
+          //}
+//
+          //val handle = ResourceManager.getHandle(path, resourceType)
+          //handle?.acquire()
+//
+          //wrapped.handle = handle
+          //wrapped.path = path
+          //return wrapped
         }
         JsonToken.BEGIN_OBJECT -> {
           val inlineResource = gson.fromJson<T>(reader, resourceType)

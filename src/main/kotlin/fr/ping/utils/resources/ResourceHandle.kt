@@ -1,5 +1,6 @@
 package fr.ping.utils.resources
 
+import fr.ping.fr.ping.utils.resources.Registry
 import java.util.concurrent.atomic.AtomicInteger
 
 class ResourceHandle<T : Resource> (
@@ -20,15 +21,17 @@ class ResourceHandle<T : Resource> (
     return this
   }
 
-  fun release() {
+  fun release() : ResourceHandle<T> {
     usageCount.decrementAndGet()
     if (usageCount.get() == 0 && !isPinned) {
-      parentRegistry?.notifyUnused(this)
+      //parentRegistry?.notifyUnused(this)
     }
+    return this
   }
 
   fun getResourcePath() : String {
-    return "${parentRegistry?.parentNamespace?.namespaceName}:${parentRegistry?.registryName}/$resourceName"
+  return ""
+  //return "${parentRegistry?.parentNamespace?.namespaceName}:${parentRegistry?.registryName}/$resourceName"
   }
 
   override fun toString(): String {

@@ -2,15 +2,39 @@ package fr.ping.utils.resources
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import fr.ping.fr.ping.utils.resources.LoadingException
+import fr.ping.fr.ping.utils.resources.LoadingExceptionType
+import fr.ping.fr.ping.utils.resources.Registry
+import fr.ping.fr.ping.utils.resources.SchemeException
+import fr.ping.fr.ping.utils.resources.SchemeExceptionType
 import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
+import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
-  private val namespaceMap: MutableMap<String, Namespace> = ConcurrentHashMap()
-  val resourcePathRegex = Regex("(^[a-z0-9]+):([a-z0-9]+)/([a-z0-9|/]+[a-zA-Z0-9]+)$")
+  private val registryMap: MutableMap<String, Registry<*>> = ConcurrentHashMap<String, Registry<*>>().apply { put("scheme", SchemeRegistry) }
+  val typeToRegistryMap: MutableMap<Class<out Resource>, String> = mutableMapOf()
+  //val resourcePathRegex = Regex("(^[a-z0-9]+):([a-z0-9]+)/([a-z0-9|/]+[a-zA-Z0-9]+)$")
 
+  val latestErrors = mutableListOf<LoadingException>()
   private val resourcePaths = mutableSetOf<String>()
+  private val resourceSchemePaths = mutableSetOf<File>()
+
+
+  operator fun set(registryName: String, registry: Registry<*>) {
+    registryMap[registryName] = registry
+    typeToRegistryMap[registry.type] = registryName
+  }
+
+  fun getRegistry(registryName: String) : Registry<*>? = registryMap[registryName]
+
+  fun getRegistry(type: Class<out Resource>) : Registry<*>? = registryMap[typeToRegistryMap[type]]
+
+  fun getRegistry(registryName: String, type: Class<out Resource>) : Registry<*>? =
+    getRegistry(registryName)?.let { if (it.type == type) it else null }
 
   fun addResourcePath(path: String) {
     resourcePaths.removeIf { it.startsWith(path) }
@@ -30,112 +54,109 @@ object ResourceManager : Cleanable {
       .create()
   }
 
-  fun findSchemeResources(loadDirectly: Boolean = true) {
+  fun findSchemeResources(loadDirectly: Boolean = true) : Set<File> {
     resourcePaths.forEach { resourcePath ->
       File(resourcePath).walkTopDown().forEach { resourceFile ->
-        if (!resourceFile.isFile) return@forEach
+        if (!resourceFile.isFile || resourceFile.extension != "json") return@forEach
         resourceFile.readText().let {
           if (!(it.contains("\"type\": \"scheme\"")
                 || it.contains("\"type\":\"scheme\""))) return@let
-          loadSchemeResource(resourceFile)
+          if (loadDirectly)
+            loadSchemeResource(resourceFile)
+          resourceSchemePaths.add(resourceFile)
         }
       }
     }
+    return resourceSchemePaths
   }
 
   fun loadSchemeResource(file: File) {
     try {
       val scheme = ResourceScheme.fromFile(file)
-      useNamespace("core").useRegistry<ResourceScheme>("schemes")
-        .registerResource(file.nameWithoutExtension, scheme)
-    //TODO adapt to new system
+      SchemeRegistry.registerResource(scheme.id, scheme)
     } catch (e: Exception) {
       e.printStackTrace()
     }
   }
 
-  fun useNamespace(name: String) : Namespace {
-    return namespaceMap[name] ?: namespaceMap.getOrPut(name) { Namespace(name) }
-  }
-
-  fun hasNamespace(name: String) : Boolean {
-    return namespaceMap.containsKey(name)
-  }
-
-  fun listNamespaces() : List<String> {
-    return namespaceMap.keys.toList()
-  }
-
-  @Deprecated("Use getHandle() instead")
-  operator fun <T : Resource> get(namespace: String, registryName: String, resourceName: String): T? {
-    @Suppress("UNCHECKED_CAST", "DEPRECATION")
-    return this.useNamespace(namespace).getRegistry<T>(registryName)?.get(resourceName)
-  }
-
-  @Deprecated("Use getHandle() instead")
-  operator fun <T> get(resourcePath: String) : T? {
-    return try {
-      val path = parseResourcePath(resourcePath)
-      @Suppress("UNCHECKED_CAST", "DEPRECATION")
-      this[path[0], path[1], path[2]] as? T
-    } catch (e: IllegalArgumentException) {
-      e.printStackTrace()
-      null
+  fun loadResource(text: String?, validate: Boolean = true, file : File? = null) : LoadingException? {
+    if (text == null) throw LoadingException(LoadingExceptionType.NULL_RESOURCE)
+    val jsonObject = gson?.fromJson(text, JsonObject::class.java) ?: throw LoadingException(LoadingExceptionType.NULL_RESOURCE)
+    val type = jsonObject.get("type")?.asString ?: throw LoadingException(LoadingExceptionType.NULL_TYPE)
+    if (type == "scheme") return null
+    val registry = registryMap[type] ?: let {
+      println("No registry for type $type, available registries: ${registryMap.keys}")
+      return LoadingException(LoadingExceptionType.NO_REGISTRY)
     }
-  }
-
-  fun <T : Resource> getHandle(namespace: String, registryName: String, resourceName: String, type: Class<T>) : ResourceHandle<T>? {
-    @Suppress("UNCHECKED_CAST")
-    return this.useNamespace(namespace).getRegistry<T>(registryName)?.getHandle(resourceName)
-  }
-
-  fun <T : Resource> getHandle(resourcePath: String, type: Class<T>) : ResourceHandle<T>? {
-    return try {
-      val path = parseResourcePath(resourcePath)
-      @Suppress("UNCHECKED_CAST")
-      this.getHandle(path[0], path[1], path[2], type)
-    } catch (e: IllegalArgumentException) {
-      e.printStackTrace()
-      null
+    if (validate) {
+      val errors = validateResource(text)
+      if (errors.isNotEmpty()) return LoadingException(LoadingExceptionType.INVALID_SCHEME, null, errors)
     }
+    val id = jsonObject.get("id")?.asString ?: "undefined"
+    val resource = registry.loadResource(jsonObject)
+    resource?.id = id
+    resource?.file = file
+    registry.registerResource(id, resource)
+    return null
   }
 
-  inline fun <reified T : Resource> getHandle(resourcePath: String) : ResourceHandle<T>? {
-    return getHandle(resourcePath, T::class.java)
+  fun validateResource(text: String?): List<SchemeException> {
+    val jsonObject = gson?.fromJson(text, JsonElement::class.java)?.asJsonObject
+      ?: return listOf(SchemeException(SchemeExceptionType.NULL_RESOURCE))
+    if (jsonObject.get("type")?.asString == null) return listOf(SchemeException(SchemeExceptionType.NULL_TYPE))
+    if (registryMap[jsonObject.get("type")?.asString] == null) return listOf(SchemeException(SchemeExceptionType.NO_REGISTRY))
+    val scheme = SchemeRegistry.getResource(jsonObject.get("type")?.asString) ?: return listOf()
+    return scheme.getSchemeErrors(jsonObject)
   }
 
-  inline fun <reified T : Resource> getHandle(namespace: String, registryName: String, resourceName: String) : ResourceHandle<T>? {
-    return getHandle(namespace, registryName, resourceName, T::class.java)
+  fun loadAllResources(validate: Boolean = true, verbose: Boolean = true, crushPreviousErrors: Boolean = true) : List<LoadingException> {
+    if (crushPreviousErrors) latestErrors.clear()
+    var resourceCount = 0
+    val errors = latestErrors.size
+    resourcePaths.forEach { resourcePath ->
+      File(resourcePath).walkTopDown().forEach { resourceFile ->
+        if (!resourceFile.isFile || resourceFile.extension != "json") return@forEach
+        if (resourceSchemePaths.contains(resourceFile)) return@forEach
+        try {
+          resourceCount++
+          loadResource(resourceFile.readText(), validate, resourceFile)?.let {
+            latestErrors.add(it.apply { file = resourceFile })
+          }
+        } catch (e: Exception) {
+          e.printStackTrace()
+        }
+        println("Loaded ${resourceFile.name}")
+      }
+    }
+    if (verbose) {
+      println("Loaded $resourceCount resources with ${latestErrors.size - errors} problematic resources.")
+      latestErrors.forEach { error ->
+        println("Error on file '${error.file ?: "unknown"}': ${error.type}")
+        error.schemeExceptions?.forEach { schemeException ->
+          println("| ${schemeException.type}${schemeException.details.expected
+            ?.let { " : expected type '${schemeException.details.expected}' on field '${schemeException.details.field}'" } ?: ""}")
+        }
+      }
+    }
+    return latestErrors
   }
 
-  override fun toString(): String {
-    return "ResourceManager(namespaceMap=$namespaceMap)"
+  fun <T : Resource> getResource(id: String, type: Class<T>) : Class<out T>? {
+    return registryMap[typeToRegistryMap[type]]?.getResource(id) as Class<out T>?
   }
 
-  /**
-   * Will attempt to parse:
-   * - `"namespace:registry/resource"`
-   * Into:
-   * - `["namespace", "registry", "resource"]`
-   * @throws IllegalArgumentException
-   */
-  fun parseResourcePath(path: String) : Array<String> {
-    val result = resourcePathRegex.find(path)
-    if (result == null) throw IllegalArgumentException("Path must be of format: 'namespace:registry/resource', was '$path'")
-    val namespace = result.groupValues[1]
-    val registry = result.groupValues[2]
-    val resource = result.groupValues[3]
+  fun <T : Resource> getHandle(id: String, type: Class<T>) : ResourceHandle<T>? {
+    val registryName = typeToRegistryMap[type]
+    val registry = registryMap[registryName]
+    return registry?.getResourceHandle(id) as ResourceHandle<T>?
+  }
 
-    return arrayOf(
-      namespace,
-      registry,
-      resource
-    )
+  operator fun <T : Resource> get(id: String, type: Class<T>) : ResourceHandle<T>? {
+    println("Getting resource $id of type $type, registry: $typeToRegistryMap")
+    return getHandle(id, type)
   }
 
   override fun clean() {
-    namespaceMap.forEach { it.value.clean() }
-    namespaceMap.clear()
     System.gc()
   }
 }

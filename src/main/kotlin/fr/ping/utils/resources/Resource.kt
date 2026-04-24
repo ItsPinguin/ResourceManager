@@ -1,6 +1,15 @@
 package fr.ping.utils.resources
 
-interface Resource : Cleanable {
-  fun getId(): String
-  fun setId(id: String)
+import java.io.File
+
+abstract class Resource(
+  var id : String = "none",
+  var type : String = "none",
+  @Transient
+  var file : File? = null
+) : Cleanable {
+
+  override fun clean() {
+
+  }
 }
