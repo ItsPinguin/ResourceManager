@@ -46,12 +46,16 @@ object ResourceManager : Cleanable {
 
   fun getResourcePaths() : List<String> = resourcePaths.toList()
 
-  val gson: Gson? by lazy {
-    GsonBuilder()
-      .registerTypeAdapterFactory(WrappedResource.WrappedResourceAdapterFactory())
-      .disableHtmlEscaping()
-      .setPrettyPrinting()
-      .create()
+  private var gson: Gson = GsonBuilder()
+    .registerTypeAdapterFactory(WrappedResource.WrappedResourceAdapterFactory())
+    .disableHtmlEscaping()
+    .setPrettyPrinting()
+    .create()
+
+  fun getGson() : Gson = gson
+
+  fun registerTypeAdapter(type: Class<*>, adapter: Any) {
+    gson = gson.newBuilder().registerTypeAdapter(type, adapter).create()
   }
 
   fun findSchemeResources(loadDirectly: Boolean = true) : Set<File> {
