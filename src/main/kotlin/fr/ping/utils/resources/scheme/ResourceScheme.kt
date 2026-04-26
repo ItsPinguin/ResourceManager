@@ -62,7 +62,7 @@ data class ResourceScheme(var fields: MutableMap<String, FieldScheme>? = mutable
   companion object {
     fun fromFile(file: File) : ResourceScheme {
       if (!file.exists()) return ResourceScheme()
-      val jsonElement = ResourceManager.gson?.fromJson(file.reader(), ResourceScheme::class.java) ?: ResourceScheme()
+      val jsonElement = ResourceManager.getGson().fromJson(file.reader(), ResourceScheme::class.java) ?: ResourceScheme()
       return jsonElement
     }
   }

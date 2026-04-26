@@ -2,7 +2,7 @@ package fr.ping.fr.ping.utils.resources
 
 import com.google.gson.JsonObject
 import fr.ping.utils.resources.Resource
-import fr.ping.utils.resources.ResourceManager.gson
+import fr.ping.utils.resources.ResourceManager
 import java.io.File
 
 class ReadyRegistry<T : Resource>(
@@ -11,7 +11,7 @@ class ReadyRegistry<T : Resource>(
   clazz
 ) {
   override fun loadResource(string: String): T? {
-    return gson?.fromJson(string, type)
+    return ResourceManager.getGson().fromJson(string, type)
   }
 
   override fun loadResource(file: File): T {
@@ -23,7 +23,7 @@ class ReadyRegistry<T : Resource>(
   }
 
   override fun loadResource(json: JsonObject): T? {
-    return gson?.fromJson(json, type)
+    return ResourceManager.getGson().fromJson(json, type)
   }
 
 
