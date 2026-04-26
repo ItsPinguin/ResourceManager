@@ -150,8 +150,8 @@ object ResourceManager : Cleanable {
   }
 
   fun <T : Resource> getHandle(id: String, type: Class<T>) : ResourceHandle<T>? {
-    val registryName = typeToRegistryMap[type]
-    val registry = registryMap[registryName]
+    val registryName = typeToRegistryMap[type ?: throw Exception("No type specified")]
+    val registry = registryMap[registryName ?: throw Exception("No registry for type ${type.simpleName}")]
     return registry?.getResourceHandle(id) as ResourceHandle<T>?
   }
 
