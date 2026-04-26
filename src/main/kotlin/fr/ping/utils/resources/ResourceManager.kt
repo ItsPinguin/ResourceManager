@@ -155,10 +155,7 @@ object ResourceManager : Cleanable {
     return registry?.getResourceHandle(id) as ResourceHandle<T>?
   }
 
-  operator fun <T : Resource> get(id: String, type: Class<T>) : ResourceHandle<T>? {
-    println("Getting resource $id of type $type, registry: $typeToRegistryMap")
-    return getHandle(id, type)
-  }
+  operator fun <T : Resource> get(id: String, type: Class<T>) : ResourceHandle<T>? = getHandle(id, type)
 
   override fun clean() {
     System.gc()
