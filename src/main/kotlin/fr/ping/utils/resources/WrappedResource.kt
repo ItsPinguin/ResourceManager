@@ -118,6 +118,8 @@ class WrappedResource<T : Resource>(
           //wrapped.handle = handle
           //wrapped.path = path
           //return wrapped
+          wrapped.handle = ResourceManager.getHandle(path, resourceType)
+          return wrapped
         }
         JsonToken.BEGIN_OBJECT -> {
           val inlineResource = gson.fromJson<T>(reader, resourceType)
@@ -125,7 +127,7 @@ class WrappedResource<T : Resource>(
         }
         JsonToken.NUMBER -> {
           @Suppress("UNCHECKED_CAST")
-          return WrappedResource<TypeWrapper<Double>>(TypeWrapper(reader.nextDouble())) as WrappedResource<T>
+          return WrappedResource(TypeWrapper(reader.nextDouble())) as WrappedResource<T>
         }
         JsonToken.NULL -> {
           reader.nextNull()
