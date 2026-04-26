@@ -25,6 +25,10 @@ abstract class Registry<T : Resource> (
     }
   }
 
+  fun unregisterResource(id : String) {
+    resourceMap.remove(id)
+  }
+
   fun getResource(id: String?) : T? = resourceMap[id]?.resource
 
   fun getResourceHandle(id: String?) : ResourceHandle<T>? = resourceMap[id]
