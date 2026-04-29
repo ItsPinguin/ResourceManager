@@ -17,47 +17,103 @@ import java.util.concurrent.ConcurrentHashMap
 object ResourceManager : Cleanable {
   private val registryMap: MutableMap<String, Registry<*>> = ConcurrentHashMap<String, Registry<*>>().apply { put("scheme", SchemeRegistry) }
   val typeToRegistryMap: MutableMap<Class<out Resource>, String> = mutableMapOf()
-  //val resourcePathRegex = Regex("(^[a-z0-9]+):([a-z0-9]+)/([a-z0-9|/]+[a-zA-Z0-9]+)$")
 
+  /**
+   * This is the list of all loading exceptions that occurred during calls to `loadAllResources`.
+   * It might get cleared if you call `loadAllResources` with `crushPreviousErrors` set to `true`.
+   */
   val latestErrors = mutableListOf<LoadingException>()
   private val resourcePaths = mutableSetOf<String>()
   private val resourceSchemePaths = mutableSetOf<File>()
 
 
+  /**
+   * This method registers a registry in the ResourceManager.
+   *
+   * @param registryName the name of the registry
+   * @param registry the registry to register
+   */
   operator fun set(registryName: String, registry: Registry<*>) {
     registryMap[registryName] = registry
     typeToRegistryMap[registry.type] = registryName
   }
 
+  /**
+   * This method returns a registry from the ResourceManager.
+   * @param registryName the name of the registry
+   */
   fun getRegistry(registryName: String) : Registry<*>? = registryMap[registryName]
 
+  /**
+   * This method returns a registry from the ResourceManager. Given a type, it finds the corresponding registry name and uses `getRegistry(String)`.
+   * @param type the type of the registry.
+   */
   fun getRegistry(type: Class<out Resource>) : Registry<*>? = registryMap[typeToRegistryMap[type]]
 
+  /**
+   * This method returns a registry from the ResourceManager. Given a registry name and a type, it finds the corresponding registry and checks if it is of the specified type.
+   * @param registryName the name of the registry.
+   * @param type the type of the registry.
+   * @return `null` if the registry is not found or if it is not of the specified type.
+   */
   fun getRegistry(registryName: String, type: Class<out Resource>) : Registry<*>? =
     getRegistry(registryName)?.let { if (it.type == type) it else null }
 
+  /**
+   * This method adds a resource path to the ResourceManager.
+   * Adding a path will remove all of its subpaths from the list, to avoid duplicate loading.
+   * @param path the path to add.
+   * @see resourcePaths
+   */
   fun addResourcePath(path: String) {
     resourcePaths.removeIf { it.startsWith(path) }
     if (resourcePaths.none { path.startsWith(it) })
       resourcePaths.add(path)
   }
 
+  /**
+   * This method adds multiple resource paths to the ResourceManager.
+   * @param paths the paths to add.
+   * @see addResourcePath
+   */
   fun addAllResourcePaths(paths: Collection<String>) = paths.forEach { addResourcePath(it) }
 
+  /**
+   * This method returns a list of all resource paths added to the ResourceManager.
+   * @see resourcePaths
+   */
   fun getResourcePaths() : List<String> = resourcePaths.toList()
 
+  /***
+   * The Gson instance used by the ResourceManager.
+   * You may add type adapters using `registerTypeAdapter(Class, Any)`.
+   */
   private var gson: Gson = GsonBuilder()
     .registerTypeAdapterFactory(WrappedResource.WrappedResourceAdapterFactory())
     .disableHtmlEscaping()
     .setPrettyPrinting()
     .create()
 
+  /**
+   * @return the Gson instance used by the ResourceManager.
+   * @see gson
+   */
   fun getGson() : Gson = gson
 
+  /**
+   * This method registers a type adapter for a specific type without messing with the existing Gson instance.
+   * @param type the type to register the adapter for.
+   */
   fun registerTypeAdapter(type: Class<*>, adapter: Any) {
     gson = gson.newBuilder().registerTypeAdapter(type, adapter).create()
   }
 
+  /**
+   * This method finds all resource schemes in the resource paths and loads them if `loadDirectly` is set to true.
+   * Scheme loading has to be separate from resource loading, because resource loading might require schemes to be checked, thus loaded.
+   * @param loadDirectly whether to load the schemes directly or not.
+   * @return a set of all resource scheme files found.
+   */
   fun findSchemeResources(loadDirectly: Boolean = true) : Set<File> {
     resourcePaths.forEach { resourcePath ->
       File(resourcePath).walkTopDown().forEach { resourceFile ->
@@ -74,6 +130,10 @@ object ResourceManager : Cleanable {
     return resourceSchemePaths
   }
 
+  /**
+   * This method loads a resource scheme from a file.
+   * @param file the file to load the scheme from.
+   */
   fun loadSchemeResource(file: File) {
     try {
       val scheme = ResourceScheme.fromFile(file)
@@ -83,6 +143,13 @@ object ResourceManager : Cleanable {
     }
   }
 
+  /**
+   * This method loads a resource from a string.
+   * @param text the string to load the resource from.
+   * @param validate whether to validate the resource using a scheme or not.
+   * @param file the file the resource was loaded from, if any. This is used for error reporting purposes.
+   * @return a LoadingException if the resource could not be loaded, or null if the resource was loaded successfully.
+   */
   fun loadResource(text: String?, validate: Boolean = true, file : File? = null) : LoadingException? {
     if (text == null) throw LoadingException(LoadingExceptionType.NULL_RESOURCE)
     val jsonObject = gson?.fromJson(text, JsonObject::class.java) ?: throw LoadingException(LoadingExceptionType.NULL_RESOURCE)
@@ -104,8 +171,12 @@ object ResourceManager : Cleanable {
     return null
   }
 
+  /**
+   * This method validates a resource using a scheme. The scheme is determined by the `type` field in the JSON.
+   * @param text the JSON string to validate.
+   */
   fun validateResource(text: String?): List<SchemeException> {
-    val jsonObject = gson?.fromJson(text, JsonElement::class.java)?.asJsonObject
+    val jsonObject = gson.fromJson(text, JsonElement::class.java)?.asJsonObject
       ?: return listOf(SchemeException(SchemeExceptionType.NULL_RESOURCE))
     if (jsonObject.get("type")?.asString == null) return listOf(SchemeException(SchemeExceptionType.NULL_TYPE))
     if (registryMap[jsonObject.get("type")?.asString] == null) return listOf(SchemeException(SchemeExceptionType.NO_REGISTRY))
@@ -113,6 +184,13 @@ object ResourceManager : Cleanable {
     return scheme.getSchemeErrors(jsonObject)
   }
 
+  /**
+   * This method loads all resources from all resource paths.
+   * @param validate whether to validate the resources using a scheme or not.
+   * @param verbose whether to print the loading progress to the console or not.
+   * @param crushPreviousErrors whether to clear the previous errors or not. They could come from previous calls to this method. Unless you have a good reason, keep set to true.
+   * @return a list of all loading exceptions that occurred during the loading process.
+   */
   fun loadAllResources(validate: Boolean = true, verbose: Boolean = true, crushPreviousErrors: Boolean = true) : List<LoadingException> {
     if (crushPreviousErrors) latestErrors.clear()
     var resourceCount = 0
@@ -145,17 +223,62 @@ object ResourceManager : Cleanable {
     return latestErrors
   }
 
+  /**
+   * This method returns a resource from the ResourceManager.
+   * Only use it when the resource has to be used directly and doesn't require updating.
+   * If you have multiple registries of the same type, make sure to use `getResource(String, Class, String)`
+   * @param id the id of the resource.
+   * @param type the type of the resource.
+   */
   fun <T : Resource> getResource(id: String, type: Class<T>) : Class<out T>? {
     return registryMap[typeToRegistryMap[type]]?.getResource(id) as Class<out T>?
   }
 
+  /**
+   * This method returns a resource from the ResourceManager.
+   * Only use it when the resource has to be used directly and doesn't require updating.
+   * @param id the id of the resource.
+   * @param type the type of the resource.
+   * @param registryName the name of the registry to use.
+   */
+  fun <T : Resource> getResource(id: String, type: Class<T>, registryName: String) : Class<out T>? {
+    return registryMap[registryName]?.getResource(id) as Class<out T>?
+  }
+
+  /**
+   * This method returns a resource handle from the ResourceManager.
+   * It is the most recommended way to get a resource from the ResourceManager.
+   * If you have multiple registries of the same type, make sure to use `getHandle(String, Class, String)`
+   * @param id the id of the resource.
+   * @param type the type of the resource.
+   */
   fun <T : Resource> getHandle(id: String, type: Class<T>) : ResourceHandle<T>? {
-    val registryName = typeToRegistryMap[type ?: throw Exception("No type specified")]
+    val registryName = typeToRegistryMap[type]
     val registry = registryMap[registryName ?: throw Exception("No registry for type ${type.simpleName}")]
     return registry?.getResourceHandle(id) as ResourceHandle<T>?
   }
 
+  /**
+   * This method returns a resource handle from the ResourceManager.
+   * It is the most recommended way to get a resource from the ResourceManager.
+   */
+  fun <T : Resource> getHandle(id: String, type: Class<T>, registryName: String) : ResourceHandle<T>? {
+    val registry = registryMap[registryName]
+    if (registry?.type != type) throw Exception("Requested type ${type.simpleName} does not match registry type ${registry?.type?.simpleName} for registry $registryName")
+    return registry.getResourceHandle(id) as ResourceHandle<T>?
+  }
+
+  /**
+   * This method returns a resource handle from the ResourceManager.
+   * @see getHandle
+   */
   operator fun <T : Resource> get(id: String, type: Class<T>) : ResourceHandle<T>? = getHandle(id, type)
+
+  /**
+   * This method returns a resource handle from the ResourceManager.
+   * @see getHandle
+   */
+  operator fun <T : Resource> get(id: String, type: Class<T>, registryName: String) : ResourceHandle<T>? = getHandle(id, type, registryName)
 
   override fun clean() {
     System.gc()
