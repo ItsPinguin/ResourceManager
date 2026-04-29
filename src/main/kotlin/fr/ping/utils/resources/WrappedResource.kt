@@ -118,6 +118,7 @@ class WrappedResource<T : Resource>(
           //wrapped.handle = handle
           //wrapped.path = path
           //return wrapped
+          wrapped.path = path
           wrapped.handle = ResourceManager.getHandle(path, resourceType)
           return wrapped
         }
