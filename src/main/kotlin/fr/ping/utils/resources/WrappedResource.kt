@@ -10,46 +10,20 @@ import com.google.gson.stream.JsonWriter
 import java.lang.reflect.ParameterizedType
 
 class WrappedResource<T : Resource>(
-  private var value : T? = null,
-  @Transient
-  private var handle: ResourceHandle<T>? = null ) {
-  @Transient
-  private var namespace: String = ""
-  @Transient
-  private var registry: String = ""
-  @Transient
-  private var resource: String = ""
-
-  private var path : String? = null
-
+  var path : String? = null,
+  var value : T? = null,
+  private var handle: ResourceHandle<T>? = null
+) {
   fun get() : T? {
     return handle?.resource ?: value
   }
 
-  /**
-   * Using this will not change the handle value but release it and set the actual value.
-   * If you wish to modify the handle, use setPath() instead.
-   * Or if you want to change the handle value, get its resource location and use it.
-   */
-  fun set(value: T?) {
-    handle?.release()
-    handle = null
-    this.value = value
-  }
-
-  fun setPath(namespace: String, registry: String, resource: String) : WrappedResource<T> {
-    this.namespace = namespace
-    this.registry = registry
-    this.resource = resource
-    this.path = "$namespace:$registry/$resource"
-    handle?.release()
-    //@Suppress("UNCHECKED_CAST")
-    //handle = ResourceManager.getHandle<T>(namespace, registry, resource, Class.forName(value?.javaClass?.name) as Class<T>)
-    return this
-  }
-
   override fun toString(): String {
     return get().toString()
+  }
+
+  fun acquireHandle() {
+    handle?.acquire()
   }
 
   fun releaseHandle() {
@@ -89,46 +63,29 @@ class WrappedResource<T : Resource>(
     }
   }
 
-  class WrappedResourceAdapter<T : Resource>
-    (
+  class WrappedResourceAdapter<T : Resource>(
     private val gson: Gson,
     private val resourceType: Class<T> // The type T (e.g., Item.class)
   ) : TypeAdapter<WrappedResource<T>>() {
-
     override fun read(reader: JsonReader): WrappedResource<T> {
       val wrapped = WrappedResource<T>()
-
       when (reader.peek()) {
         JsonToken.STRING -> {
           val path = reader.nextString()
-
-
           if (path.isEmpty()) {
             return wrapped
           }
-
-          //if (!ResourceManager.resourcePathRegex.matches(path)) {
-          //  @Suppress("UNCHECKED_CAST")
-          //  return WrappedResource<TypeWrapper<String>>(TypeWrapper(path)) as WrappedResource<T>
-          //}
-//
-          //val handle = ResourceManager.getHandle(path, resourceType)
-          //handle?.acquire()
-//
-          //wrapped.handle = handle
-          //wrapped.path = path
-          //return wrapped
           wrapped.path = path
           wrapped.handle = ResourceManager.getHandle(path, resourceType)
           return wrapped
         }
         JsonToken.BEGIN_OBJECT -> {
           val inlineResource = gson.fromJson<T>(reader, resourceType)
-          WrappedResource<T>().let { it.set(inlineResource); return it }
+          WrappedResource<T>().let { it.value = inlineResource; return it }
         }
         JsonToken.NUMBER -> {
           @Suppress("UNCHECKED_CAST")
-          return WrappedResource(TypeWrapper(reader.nextDouble())) as WrappedResource<T>
+          return WrappedResource(value = TypeWrapper(reader.nextDouble())) as WrappedResource<T>
         }
         JsonToken.NULL -> {
           reader.nextNull()
