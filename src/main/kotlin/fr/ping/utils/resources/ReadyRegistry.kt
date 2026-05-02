@@ -10,6 +10,10 @@ class ReadyRegistry<T : Resource>(
 ) : Registry<T>(
   clazz
 ) {
+  constructor(type: Class<T>, registryName: String) : this(type) {
+    ResourceManager[registryName] = this
+  }
+
   override fun loadResource(string: String): T? {
     return ResourceManager.getGson().fromJson(string, type)
   }
