@@ -6,7 +6,7 @@
 
     <groupId>fr.ping</groupId>
     <artifactId>ResourceManager</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>26.5.6</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -99,6 +99,11 @@
             <artifactId>mockk</artifactId>
             <version>1.13.8</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
         </dependency>
     </dependencies>
 
