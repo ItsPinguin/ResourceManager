@@ -4,6 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.ToNumberPolicy
+import com.google.gson.ToNumberStrategy
 import fr.ping.fr.ping.utils.resources.LoadingException
 import fr.ping.fr.ping.utils.resources.LoadingExceptionType
 import fr.ping.fr.ping.utils.resources.Registry
@@ -11,10 +13,12 @@ import fr.ping.fr.ping.utils.resources.SchemeException
 import fr.ping.fr.ping.utils.resources.SchemeExceptionType
 import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
+  val logger = java.util.logging.Logger.getLogger("ResourceManager")
   private val registryMap: MutableMap<String, Registry<*>> = ConcurrentHashMap<String, Registry<*>>().apply { put("scheme", SchemeRegistry) }
   val typeToRegistryMap: MutableMap<Class<out Resource>, String> = mutableMapOf()
 
@@ -92,6 +96,7 @@ object ResourceManager : Cleanable {
     .registerTypeAdapterFactory(WrappedResource.WrappedResourceAdapterFactory())
     .disableHtmlEscaping()
     .setPrettyPrinting()
+    .setObjectToNumberStrategy(ToNumberPolicy.DOUBLE)
     .create()
 
   /**
@@ -282,5 +287,9 @@ object ResourceManager : Cleanable {
 
   override fun clean() {
     System.gc()
+  }
+
+  fun <T> parseAny(any: Any?, type : Class<T>) : T? {
+    return gson.fromJson(gson.toJson(any, type), type)
   }
 }
