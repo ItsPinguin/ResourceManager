@@ -6,6 +6,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.ToNumberPolicy
 import com.google.gson.ToNumberStrategy
+import com.google.gson.reflect.TypeToken
 import fr.ping.fr.ping.utils.resources.LoadingException
 import fr.ping.fr.ping.utils.resources.LoadingExceptionType
 import fr.ping.fr.ping.utils.resources.Registry
@@ -15,6 +16,7 @@ import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
@@ -289,7 +291,7 @@ object ResourceManager : Cleanable {
     System.gc()
   }
 
-  fun <T> parseAny(any: Any?, type : Class<T>) : T? {
-    return gson.fromJson(gson.toJson(any), type)
+  inline fun <reified T> parseAny(any: Any?) : T? {
+    return getGson().fromJson(getGson().toJson(any), object : TypeToken<T>() {}.type ) as? T
   }
 }
