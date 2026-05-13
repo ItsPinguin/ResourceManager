@@ -6,6 +6,7 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.ToNumberPolicy
 import com.google.gson.ToNumberStrategy
+import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
 import fr.ping.fr.ping.utils.resources.LoadingException
 import fr.ping.fr.ping.utils.resources.LoadingExceptionType
@@ -112,7 +113,11 @@ object ResourceManager : Cleanable {
    * @param type the type to register the adapter for.
    */
   fun registerTypeAdapter(type: Class<*>, adapter: Any) {
-    gson = gson.newBuilder().registerTypeAdapter(type, adapter).create()
+    gson = gson.newBuilder().registerTypeHierarchyAdapter(type, adapter).create()
+  }
+
+  fun registerTypeAdapterFactory(factory: TypeAdapterFactory) {
+    gson = gson.newBuilder().registerTypeAdapterFactory(factory).create()
   }
 
   /**
@@ -292,6 +297,19 @@ object ResourceManager : Cleanable {
   }
 
   inline fun <reified T> parseAny(any: Any?) : T? {
-    return getGson().fromJson(getGson().toJson(any), object : TypeToken<T>() {}.type ) as? T
+    return getGson().fromJson(
+      when (any) {
+        is JsonElement -> any
+        else -> getGson().toJsonTree(any)
+    }, object : TypeToken<T>() {}.type )
+  }
+
+  inline fun <reified T> parseJson(element: JsonElement?): T? {
+    if (element == null || element.isJsonNull) return null
+
+    return getGson().fromJson<T>(
+      element,
+      object : TypeToken<T>() {}.type
+    )
   }
 }
