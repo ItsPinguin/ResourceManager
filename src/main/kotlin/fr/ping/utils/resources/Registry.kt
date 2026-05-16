@@ -9,6 +9,7 @@ abstract class Registry<T : Resource> (
   val type: Class<T>
 ) {
   val resourceMap = mutableMapOf<String, ResourceHandle<T>>()
+  val indexMap : MutableMap<String, MutableMap<Any, MutableList<String>>> = mutableMapOf()
 
   abstract fun loadResource(string: String) : T?
   abstract fun loadResource(file: File) : T?
@@ -19,7 +20,19 @@ abstract class Registry<T : Resource> (
 
   fun registerResource(id: String, resource: T) {
     try {
-      resourceMap[id] = ResourceHandle(this, id).apply { this.resource = resource }
+      resource.id = id
+      val handle = resourceMap[id] ?: ResourceHandle(this, id)
+      handle.resource = resource
+      resourceMap[id] = handle
+      resource.javaClass.declaredFields.forEach { field ->
+        field.isAccessible = true
+        field.annotations.firstOrNull { annotation ->
+          annotation is RegistryIndex
+        }?.let {
+          indexMap.getOrPut((it as RegistryIndex).name) { mutableMapOf() }
+            .getOrPut(field.get(resource)) { mutableListOf() }.add(resource.id)
+        }
+      }
     } catch (e: Exception) {
       e.printStackTrace()
     }
@@ -31,7 +44,15 @@ abstract class Registry<T : Resource> (
 
   fun getResource(id: String?) : T? = resourceMap[id]?.resource
 
-  fun getResourceHandle(id: String?) : ResourceHandle<T>? = resourceMap[id]
+  fun getResourceHandle(id: String?) : ResourceHandle<T>? {
+    if (id == null) return null
+    if (resourceMap[id] == null) {
+      resourceMap[id] = ResourceHandle(this, id)
+    }
+    return resourceMap[id]
+  }
+
+  fun listIdsByIndex(index: String, value: Any) : List<String> = indexMap[index]?.get(value) ?: listOf()
 
   fun listIds() : List<String> = resourceMap.keys.toList()
 
