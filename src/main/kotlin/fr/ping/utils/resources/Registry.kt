@@ -9,7 +9,7 @@ abstract class Registry<T : Resource> (
   val type: Class<T>
 ) {
   val resourceMap = mutableMapOf<String, ResourceHandle<T>>()
-  val indexMap : MutableMap<String, MutableMap<Any, MutableList<String>>> = mutableMapOf()
+  val indexMap : MutableMap<String, MutableMap<Any, MutableSet<String>>> = mutableMapOf()
 
   abstract fun loadResource(string: String) : T?
   abstract fun loadResource(file: File) : T?
@@ -30,7 +30,7 @@ abstract class Registry<T : Resource> (
           annotation is RegistryIndex
         }?.let {
           indexMap.getOrPut((it as RegistryIndex).name) { mutableMapOf() }
-            .getOrPut(field.get(resource)) { mutableListOf() }.add(resource.id)
+            .getOrPut(field.get(resource)) { mutableSetOf() }.add(resource.id)
         }
       }
     } catch (e: Exception) {
@@ -52,7 +52,7 @@ abstract class Registry<T : Resource> (
     return resourceMap[id]
   }
 
-  fun listIdsByIndex(index: String, value: Any) : List<String> = indexMap[index]?.get(value) ?: listOf()
+  fun listIdsByIndex(index: String, value: Any) : Set<String> = indexMap[index]?.get(value)?.toSet() ?: setOf()
 
   fun listIds() : List<String> = resourceMap.keys.toList()
 
