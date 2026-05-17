@@ -6,7 +6,7 @@
 
   <groupId>fr.ping</groupId>
   <artifactId>ResourceManager</artifactId>
-  <version>26.5.6</version>
+  <version>26.5.17</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
