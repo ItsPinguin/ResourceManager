@@ -12,7 +12,7 @@ class ReadyRegistry<T : Resource>(
   type,
   indexes
 ) {
-  constructor(type: Class<T>, registryName: String, indexes : MutableList<RegistryIndex<T>>) : this(type) {
+  constructor(type: Class<T>, registryName: String, indexes : MutableList<RegistryIndex<T>> = mutableListOf()) : this(type) {
     ResourceManager[registryName] = this
     this.indexes.addAll(indexes)
   }
