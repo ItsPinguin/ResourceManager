@@ -1,12 +1,14 @@
-package fr.ping.fr.ping.utils.resources
+package fr.ping.fr.ping.utils.resources.registry
 
 import com.google.gson.JsonObject
 import fr.ping.utils.resources.Resource
 import fr.ping.utils.resources.ResourceHandle
 import java.io.File
+import kotlin.collections.get
 
 abstract class Registry<T : Resource> (
-  val type: Class<T>
+  val type: Class<T>,
+  val indexes : MutableList<RegistryIndex<T>> = mutableListOf()
 ) {
   val resourceMap = mutableMapOf<String, ResourceHandle<T>>()
   val indexMap : MutableMap<String, MutableMap<Any, MutableSet<String>>> = mutableMapOf()
@@ -24,14 +26,9 @@ abstract class Registry<T : Resource> (
       val handle = resourceMap[id] ?: ResourceHandle(this, id)
       handle.resource = resource
       resourceMap[id] = handle
-      resource.javaClass.declaredFields.forEach { field ->
-        field.isAccessible = true
-        field.annotations.firstOrNull { annotation ->
-          annotation is RegistryIndex
-        }?.let {
-          indexMap.getOrPut((it as RegistryIndex).name) { mutableMapOf() }
-            .getOrPut(field.get(resource)) { mutableSetOf() }.add(resource.id)
-        }
+      indexes.forEach { index ->
+        indexMap.getOrPut(index.index) { mutableMapOf() }
+          .getOrPut(index.consumer.invoke(resource)) { mutableSetOf() }.add(resource.id)
       }
     } catch (e: Exception) {
       e.printStackTrace()

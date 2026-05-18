@@ -1,4 +1,4 @@
-package fr.ping.fr.ping.utils.resources
+package fr.ping.fr.ping.utils.resources.registry
 
 import com.google.gson.JsonObject
 import fr.ping.utils.resources.Resource
@@ -6,12 +6,15 @@ import fr.ping.utils.resources.ResourceManager
 import java.io.File
 
 class ReadyRegistry<T : Resource>(
-  val clazz : Class<T>
+  type : Class<T>,
+  indexes : MutableList<RegistryIndex<T>> = mutableListOf()
 ) : Registry<T>(
-  clazz
+  type,
+  indexes
 ) {
-  constructor(type: Class<T>, registryName: String) : this(type) {
+  constructor(type: Class<T>, registryName: String, indexes : MutableList<RegistryIndex<T>>) : this(type) {
     ResourceManager[registryName] = this
+    this.indexes.addAll(indexes)
   }
 
   override fun loadResource(string: String): T? {
@@ -29,6 +32,4 @@ class ReadyRegistry<T : Resource>(
   override fun loadResource(json: JsonObject): T? {
     return ResourceManager.getGson().fromJson(json, type)
   }
-
-
 }
