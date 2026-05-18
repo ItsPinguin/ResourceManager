@@ -1,6 +1,6 @@
 package fr.ping.utils.resources
 
-import fr.ping.fr.ping.utils.resources.Registry
+import fr.ping.fr.ping.utils.resources.registry.Registry
 import java.util.concurrent.atomic.AtomicInteger
 
 class ResourceHandle<T : Resource> (

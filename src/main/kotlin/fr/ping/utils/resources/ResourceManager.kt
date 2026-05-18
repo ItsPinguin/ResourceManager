@@ -5,19 +5,16 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.ToNumberPolicy
-import com.google.gson.ToNumberStrategy
 import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
 import fr.ping.fr.ping.utils.resources.LoadingException
 import fr.ping.fr.ping.utils.resources.LoadingExceptionType
-import fr.ping.fr.ping.utils.resources.Registry
+import fr.ping.fr.ping.utils.resources.registry.Registry
 import fr.ping.fr.ping.utils.resources.SchemeException
 import fr.ping.fr.ping.utils.resources.SchemeExceptionType
 import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
-import org.slf4j.LoggerFactory
 import java.io.File
-import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
