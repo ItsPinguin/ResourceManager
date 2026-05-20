@@ -7,14 +7,13 @@ import java.io.File
 
 class ReadyRegistry<T : Resource>(
   type : Class<T>,
-  indexes : MutableList<RegistryIndex<T>> = mutableListOf()
+  indexes : MutableMap<String, (T) -> String> = mutableMapOf()
 ) : Registry<T>(
   type,
   indexes
 ) {
-  constructor(type: Class<T>, registryName: String, indexes : MutableList<RegistryIndex<T>> = mutableListOf()) : this(type) {
+  constructor(type: Class<T>, registryName: String, indexes : MutableMap<String, (T) -> String> = mutableMapOf()) : this(type, indexes) {
     ResourceManager[registryName] = this
-    this.indexes.addAll(indexes)
   }
 
   override fun loadResource(string: String): T? {

@@ -8,7 +8,7 @@ import kotlin.collections.get
 
 abstract class Registry<T : Resource> (
   val type: Class<T>,
-  val indexes : MutableList<RegistryIndex<T>> = mutableListOf()
+  private val indexes : MutableMap<String, (T) -> String> = mutableMapOf()
 ) {
   val resourceMap = mutableMapOf<String, ResourceHandle<T>>()
   val indexMap : MutableMap<String, MutableMap<Any, MutableSet<String>>> = mutableMapOf()
@@ -27,8 +27,8 @@ abstract class Registry<T : Resource> (
       handle.resource = resource
       resourceMap[id] = handle
       indexes.forEach { index ->
-        indexMap.getOrPut(index.index) { mutableMapOf() }
-          .getOrPut(index.consumer.invoke(resource)) { mutableSetOf() }.add(resource.id)
+        indexMap.getOrPut(index.key) { mutableMapOf() }
+          .getOrPut(index.value.invoke(resource)) { mutableSetOf() }.add(resource.id)
       }
     } catch (e: Exception) {
       e.printStackTrace()
@@ -49,7 +49,7 @@ abstract class Registry<T : Resource> (
     return resourceMap[id]
   }
 
-  fun listIdsByIndex(index: String, value: Any) : Set<String> = indexMap[index]?.get(value)?.toSet() ?: setOf()
+  fun listIdsByIndex(index: String, value: Any) : Set<String> = indexMap[index]?.get(value.toString())?.toSet() ?: setOf()
 
   fun listIds() : List<String> = resourceMap.keys.toList()
 
@@ -62,4 +62,6 @@ abstract class Registry<T : Resource> (
       handle.resource
     }
   }
+
+  fun registerIndex(index: String, indexMapper: (T) -> String) = indexes.put(index, indexMapper)
 }
