@@ -293,7 +293,7 @@ object ResourceManager : Cleanable {
     System.gc()
   }
 
-  inline fun <reified T> parseAny(any: Any?) : T? {
+  fun <T> parseAny(any: Any?) : T? {
     return getGson().fromJson(
       when (any) {
         is JsonElement -> any
@@ -301,7 +301,7 @@ object ResourceManager : Cleanable {
     }, object : TypeToken<T>() {}.type )
   }
 
-  inline fun <reified T> parseJson(element: JsonElement?): T? {
+  fun <T> parseJson(element: JsonElement?): T? {
     if (element == null || element.isJsonNull) return null
 
     return getGson().fromJson<T>(
