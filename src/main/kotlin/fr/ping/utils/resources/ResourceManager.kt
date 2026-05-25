@@ -309,4 +309,6 @@ object ResourceManager : Cleanable {
       object : TypeToken<T>() {}.type
     )
   }
+
+  fun getRegistryMap() : Map<String, Registry<*>> = registryMap.toMap()
 }
