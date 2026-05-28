@@ -293,20 +293,37 @@ object ResourceManager : Cleanable {
     System.gc()
   }
 
-  fun <T> parseAny(any: Any?) : T? {
+  inline fun <reified T> parseAny(any: Any?) : T? {
     return getGson().fromJson(
       when (any) {
         is JsonElement -> any
         else -> getGson().toJsonTree(any)
-    }, object : TypeToken<T>() {}.type )
+      }, object : TypeToken<T>() {}.type )
   }
 
-  fun <T> parseJson(element: JsonElement?): T? {
+  inline fun <reified T> parseJson(element: JsonElement?): T? {
     if (element == null || element.isJsonNull) return null
 
     return getGson().fromJson<T>(
       element,
       object : TypeToken<T>() {}.type
+    )
+  }
+
+  fun <T> parseAny(any: Any?, type : Class<T>) : T? {
+    return getGson().fromJson(
+      when (any) {
+        is JsonElement -> any
+        else -> getGson().toJsonTree(any)
+      }, type)
+  }
+
+  fun <T> parseJson(element: JsonElement?, type : Class<T>): T? {
+    if (element == null || element.isJsonNull) return null
+
+    return getGson().fromJson<T>(
+      element,
+      type
     )
   }
 
