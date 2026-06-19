@@ -15,6 +15,7 @@ import fr.ping.fr.ping.utils.resources.SchemeExceptionType
 import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
 import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
 import java.io.File
+import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 
 object ResourceManager : Cleanable {
@@ -303,10 +304,25 @@ object ResourceManager : Cleanable {
 
   inline fun <reified T> parseJson(element: JsonElement?): T? {
     if (element == null || element.isJsonNull) return null
-
     return getGson().fromJson<T>(
       element,
       object : TypeToken<T>() {}.type
+    )
+  }
+
+  fun <T> parseAny(any: Any?, type : Type) : T? {
+    return getGson().fromJson(
+      when (any) {
+        is JsonElement -> any
+        else -> getGson().toJsonTree(any)
+      }, type )
+  }
+
+  fun <T> parseJson(element: JsonElement?, type : Type): T? {
+    if (element == null || element.isJsonNull) return null
+    return getGson().fromJson<T>(
+      element,
+      type
     )
   }
 
