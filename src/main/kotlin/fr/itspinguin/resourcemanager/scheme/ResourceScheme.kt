@@ -1,12 +1,11 @@
-package fr.ping.fr.ping.utils.resources.scheme
+package fr.itspinguin.resourcemanager.scheme
 
 import com.google.gson.JsonObject
-import fr.ping.fr.ping.utils.resources.Details
-import fr.ping.fr.ping.utils.resources.LoadingExceptionType
-import fr.ping.fr.ping.utils.resources.SchemeException
-import fr.ping.fr.ping.utils.resources.SchemeExceptionType
-import fr.ping.utils.resources.Resource
-import fr.ping.utils.resources.ResourceManager
+import fr.itspinguin.resourcemanager.Details
+import fr.itspinguin.resourcemanager.SchemeException
+import fr.itspinguin.resourcemanager.SchemeExceptionType
+import fr.itspinguin.resourcemanager.Resource
+import fr.itspinguin.resourcemanager.ResourceManager
 import java.io.File
 
 data class ResourceScheme(var fields: MutableMap<String, FieldScheme>? = mutableMapOf()) : Resource() {

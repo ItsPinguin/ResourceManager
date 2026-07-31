@@ -1,4 +1,4 @@
-package fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
 interface Cleanable {
   fun clean()

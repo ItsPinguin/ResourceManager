@@ -1,4 +1,4 @@
-package fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
 import java.io.File
 
@@ -7,7 +7,7 @@ abstract class Resource(
   var type : String = "none",
   @Transient
   var file : File? = null
-) : Cleanable {
+) : fr.itspinguin.resourcemanager.Cleanable {
 
   override fun clean() {
 

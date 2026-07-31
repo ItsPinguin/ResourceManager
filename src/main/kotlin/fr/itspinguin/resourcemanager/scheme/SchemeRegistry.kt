@@ -1,7 +1,7 @@
-package fr.ping.fr.ping.utils.resources.scheme
+package fr.itspinguin.resourcemanager.scheme
 
 import com.google.gson.JsonObject
-import fr.ping.fr.ping.utils.resources.registry.Registry
+import fr.itspinguin.resourcemanager.registry.Registry
 import java.io.File
 
 object SchemeRegistry : Registry<ResourceScheme>(ResourceScheme::class.java) {

@@ -1,8 +1,8 @@
-package fr.ping.fr.ping.utils.resources.registry
+package fr.itspinguin.resourcemanager.registry
 
 import com.google.gson.JsonObject
-import fr.ping.utils.resources.Resource
-import fr.ping.utils.resources.ResourceHandle
+import fr.itspinguin.resourcemanager.ResourceHandle
+import fr.itspinguin.resourcemanager.Resource
 import java.io.File
 import kotlin.collections.get
 

@@ -1,4 +1,4 @@
-package fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -7,18 +7,14 @@ import com.google.gson.JsonObject
 import com.google.gson.ToNumberPolicy
 import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
-import fr.ping.fr.ping.utils.resources.LoadingException
-import fr.ping.fr.ping.utils.resources.LoadingExceptionType
-import fr.ping.fr.ping.utils.resources.registry.Registry
-import fr.ping.fr.ping.utils.resources.SchemeException
-import fr.ping.fr.ping.utils.resources.SchemeExceptionType
-import fr.ping.fr.ping.utils.resources.scheme.ResourceScheme
-import fr.ping.fr.ping.utils.resources.scheme.SchemeRegistry
+import fr.itspinguin.resourcemanager.registry.Registry
+import fr.itspinguin.resourcemanager.scheme.ResourceScheme
+import fr.itspinguin.resourcemanager.scheme.SchemeRegistry
 import java.io.File
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
 
-object ResourceManager : Cleanable {
+object ResourceManager : fr.itspinguin.resourcemanager.Cleanable {
   val logger = java.util.logging.Logger.getLogger("ResourceManager")
   private val registryMap: MutableMap<String, Registry<*>> = ConcurrentHashMap<String, Registry<*>>().apply { put("scheme", SchemeRegistry) }
   val typeToRegistryMap: MutableMap<Class<out Resource>, String> = mutableMapOf()

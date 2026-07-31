@@ -1,4 +1,4 @@
-package fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter

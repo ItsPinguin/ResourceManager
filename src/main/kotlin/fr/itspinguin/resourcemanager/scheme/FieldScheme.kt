@@ -1,4 +1,4 @@
-package fr.ping.fr.ping.utils.resources.scheme
+package fr.itspinguin.resourcemanager.scheme
 
 class FieldScheme {
     var type: String? = null

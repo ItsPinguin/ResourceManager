@@ -1,4 +1,4 @@
-package fr.ping.fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
 import java.io.File
 
@@ -16,7 +16,8 @@ enum class LoadingExceptionType {
 
 data class SchemeException(
   val type: SchemeExceptionType,
-  val details: Details = Details()) : Exception()
+  val details: Details = Details()
+) : Exception()
 enum class SchemeExceptionType {
   NULL_RESOURCE,
   NULL_TYPE,

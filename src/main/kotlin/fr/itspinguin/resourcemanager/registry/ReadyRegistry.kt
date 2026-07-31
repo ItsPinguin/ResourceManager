@@ -1,8 +1,8 @@
-package fr.ping.fr.ping.utils.resources.registry
+package fr.itspinguin.resourcemanager.registry
 
 import com.google.gson.JsonObject
-import fr.ping.utils.resources.Resource
-import fr.ping.utils.resources.ResourceManager
+import fr.itspinguin.resourcemanager.Resource
+import fr.itspinguin.resourcemanager.ResourceManager
 import java.io.File
 
 class ReadyRegistry<T : Resource>(

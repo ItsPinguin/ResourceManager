@@ -1,9 +1,9 @@
-package fr.ping.utils.resources
+package fr.itspinguin.resourcemanager
 
-import fr.ping.fr.ping.utils.resources.registry.Registry
+import fr.itspinguin.resourcemanager.registry.Registry
 import java.util.concurrent.atomic.AtomicInteger
 
-class ResourceHandle<T : Resource> (
+class ResourceHandle<T : fr.itspinguin.resourcemanager.Resource> (
   var parentRegistry: Registry<T>? = null,
   val resourceName: String? = null
 ) {
