@@ -215,9 +215,10 @@ object ResourceManager : Cleanable {
             latestErrors.add(it.apply { file = resourceFile })
           }
         } catch (e: Exception) {
-          e.printStackTrace()
+          println(e.message)
         }
-        println("Loaded ${resourceFile.name}")
+        if (verbose)
+          println("Loaded ${resourceFile.name}")
       }
     }
     if (verbose) {
