@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>fr.ping</groupId>
-  <artifactId>ResourceManager</artifactId>
-  <version>26.5.28</version>
+  <groupId>fr.itspinguin.resourcemanager</groupId>
+  <artifactId>resource-manager</artifactId>
+  <version>1.0.0</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -100,16 +100,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-      <version>5.1.0</version>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.10.2</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
-
 </project>
